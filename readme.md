@@ -41,7 +41,8 @@ Return's the encoded Blurhash as string or false if not existing
 $page->image_field->getBlurhashDataUri(float $width, float $height)
 ```
 
-E.g. ```php
+E.g.
+```php
 <img src="$page->image_field->getBlurhashDataUri(500, 300)" alt="" data-lazy="$page->image_field->size(500, 300)" />
 ```
 
@@ -53,7 +54,8 @@ For migration of existing fields there are two CLI script in the module director
 
 #### regenerateImages.php
 
-E.g. ```bash 
+E.g. 
+```bash 
 php regenerateImages.php
 ```
 
@@ -61,7 +63,8 @@ Generates for all image fields who have the createBlurhash option new Blurhashs.
 
 #### generateEmptyImages.php
 
-E.g. ```bash
+E.g.
+```bash
 php generateEmptyImages.php
 ```
 
