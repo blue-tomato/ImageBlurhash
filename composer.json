@@ -21,7 +21,8 @@
         "hari/pw-module": "~1.0",
         "kornrunner/blurhash": "~1.1.0",
         "ext-curl": "*",
-        "ext-gd": "*"
+        "ext-gd": "*",
+        "ext-exif": "*"
     },
     "require-dev": {
       "processwire/processwire": ">=3.0.133"
