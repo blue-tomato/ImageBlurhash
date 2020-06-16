@@ -165,7 +165,7 @@ class ImageBlurhash extends InputfieldImage implements Module
             // optional loading over curl with http-proxy for some special internal cases at Blue Tomato
             // use of native curl when available, WireHttp (also with "use" => "curl") does not work well with our proxy
             if (strpos($file, "http") === 0) {
-                $config = Wire::getFuel("config");
+                $config = $this->wire("config");
                 if (function_exists("curl_version")) {
 
                     $ch = curl_init();
@@ -177,7 +177,12 @@ class ImageBlurhash extends InputfieldImage implements Module
                     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
                     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                     $imageFile = curl_exec($ch);
+                    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                     curl_close($ch);
+                    if ($httpcode !== 200) {
+                        $imageFile = false;
+                        $this->errors("Error, url to image reponded with http status: $httpcode", Notice::log);
+                    }
                 } else {
                     $http = new WireHttp();
                     $imageFile = $http->get($file, [
