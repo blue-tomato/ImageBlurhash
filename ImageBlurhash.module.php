@@ -13,31 +13,29 @@ class ImageBlurhash extends InputfieldImage implements Module
             'title' => 'ImageBlurhash',
             'class' => 'ImageBlurhash',
             'author' => 'Blue Tomato',
-            'version' => 100,
+            'version' => 200,
             'summary' => 'Create Blurhash Strings during image upload',
             'singular' => true,
             'autoload' => true,
-            'requires' => array('PHP>=7.0', 'FieldtypeImage')
+            'requires' => array('PHP>=7.0', 'ProcessWire>=3.0.155', 'FieldtypeImage')
         );
     }
 
     public function init()
     {
         $this->addHookAfter('FieldtypeImage::getConfigInputfields', $this, 'hookGetConfigInputFields');
-        $this->addHookBefore('FieldtypeImage::savePageField', $this, 'hookSavePageField');
+        $this->addHookAfter('FieldtypeImage::savePageField', $this, 'hookSavePageField');
 
         $this->addHookProperty('Pageimage::blurhash', function (HookEvent $event) {
             $image = $event->object;
-            $field = $image->pagefiles->getField();
-            $event->return = $this->getRawBlurhash($field->name, $image->name);
+            $event->return = $this->getRawBlurhash($image);
         });
 
         $this->addHookMethod('Pageimage::getBlurhashDataUri', function (HookEvent $event) {
             $image = $event->object;
-            $field = $image->pagefiles->getField();
             $width = $event->arguments(0);
             $height = $event->arguments(1);
-            $event->return = $this->getDecodedBlurhash($field->name, $image->name, $width, $height);
+            $event->return = $this->getDecodedBlurhash($image, $width, $height);
         });
     }
 
@@ -68,39 +66,29 @@ class ImageBlurhash extends InputfieldImage implements Module
 
         $images = $page->get($field->name);
         if ($field->createBlurhash && $images->count() > 0 && !$page->hasStatus(Page::statusDeleted)) {
-            foreach ($images as $name => $image) {
-                $blurhash = $this->createBlurhash($image->filename);
-                if ($blurhash && $columnExists = $this->checkBlurhashTableColumn($field->name)) {
-                    $this->insertBlurhash($blurhash, $field->name, $name);
+            $image = $images->last(); // get the last added images (should be the currently uploaded images)
+            if (!$this->getRawBlurhash($image)) {
+                if ($blurhash = $this->createBlurhash($image->filename)) {
+                    $this->insertBlurhash($blurhash, $page, $field, $image);
                 }
             }
         }
     }
 
-    public function getRawBlurhash(string $fieldName, string $imageName)
+    public function getRawBlurhash(Pageimage $image)
     {
-        $db = $this->wire('database');
-
-        $col = "blurhash";
-        $table = "field_{$fieldName}";
-
-        $sql = "SELECT $col FROM $table WHERE data='$imageName' LIMIT 1";
-        try {
-            $result = $db->query($sql)->fetch();
-            if ($result && isset($result[0]) && !empty($result[0])) {
-                return $result[0];
-            }
-        } catch (\Exception $e) {
-            $this->errors($e->getMessage(), Notice::log);
+        $blurhash = $image->filedata("blurhash");
+        if ($blurhash && !empty($blurhash)) {
+            return $blurhash;
         }
 
         return false;
     }
 
-    public function getDecodedBlurhash(string $fieldName, string $imageName, float $width = 0, float $height = 0)
+    public function getDecodedBlurhash(Pageimage $image, float $width = 0, float $height = 0)
     {
         $blankFallbackGif = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
-        $rawBlurhash = $this->getRawBlurhash($fieldName, $imageName);
+        $rawBlurhash = $this->getRawBlurhash($image);
         if ($rawBlurhash && $width > 0 && $height > 0) {
 
             $ratio =  $width / $height;
@@ -160,64 +148,10 @@ class ImageBlurhash extends InputfieldImage implements Module
         return $blankFallbackGif;
     }
 
-    public function insertBlurhash(string $blurhash, string $fieldName, string $imageName)
+    public function insertBlurhash(string $blurhash, Page $page, Field $field, Pageimage $image)
     {
-        $db = $this->wire('database');
-
-        $col = "blurhash";
-        $table = "field_{$fieldName}";
-
-        try {
-            $query = $db->prepare("UPDATE `$table` SET $col=:blurhash WHERE data='$imageName'");
-            $query->bindValue(":blurhash", $blurhash);
-            $query->execute();
-            return true;
-        } catch (\Exception $e) {
-            $this->errors($e->getMessage(), Notice::log);
-            return false;
-        }
-    }
-
-    public function checkBlurhashTableColumn(string $fieldName)
-    {
-        $db = $this->wire('database');
-
-        $col = "blurhash";
-        $table = "field_{$fieldName}";
-
-        $sql = "SHOW COLUMNS FROM `$table` LIKE '$col'";
-        try {
-            $query = $db->prepare($sql);
-            $query->execute();
-            $numRows = (int) $query->rowCount();
-            $query->closeCursor();
-        } catch (\Exception $e) {
-            $this->errors($e->getMessage(), Notice::log);
-            return false;
-        }
-
-        if (empty($numRows)) {
-            $addColumn = "ALTER TABLE `{$table}` ADD `{$col}` VARCHAR(200) DEFAULT ''";
-            try {
-                $db->exec($addColumn);
-                $this->message("Added column '{$col}' for '{$table}'", Notice::log);
-            } catch (\Exception $e) {
-                $this->errors($e->getMessage(), Notice::log);
-                return false;
-            }
-
-            try {
-                $date = date('Y-m-d H:i:s');
-                $query = $db->prepare("UPDATE `$table` SET created=:created, modified=:modified");
-                $query->bindValue(":created", $date);
-                $query->bindValue(":modified", $date);
-                $query->execute();
-                $this->message("Updated created/modified for '{$table}'", Notice::log);
-            } catch (\Exception $e) {
-                $this->errors($e->getMessage(), Notice::log);
-            }
-        }
-
+        $image->filedata("blurhash", $blurhash);
+        $page->save($field->name, ["quiet" => true, "noHooks" => true]);
         return true;
     }
 

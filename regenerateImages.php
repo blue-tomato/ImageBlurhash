@@ -31,8 +31,8 @@ foreach ($fields->find("type=FieldtypeImage") as $field) {
     
                 $blurhash = $ImageBlurhash->createBlurhash($file);
     
-                if ($blurhash && $columnExists = $ImageBlurhash->checkBlurhashTableColumn($field->name)) {
-                    $success = $ImageBlurhash->insertBlurhash($blurhash, $field->name, $image->name);
+                if ($blurhash) {
+                    $success = $ImageBlurhash->insertBlurhash($blurhash, $page, $field, $image);
                     if($success) {
                         echo "Blurhash saved for {$image->name} in {$field->name} \n";
                     } else {
