@@ -105,8 +105,8 @@ class ImageBlurhash extends InputfieldImage implements Module
             if ($pixels) {
                 $image = imagecreatetruecolor($calcWidth, $calcHeight);
 
-                for ($y = 0; $y < $height; ++$y) {
-                    for ($x = 0; $x < $width; ++$x) {
+                for ($y = 0; $y < $calcHeight; ++$y) {
+                    for ($x = 0; $x < $calcWidth; ++$x) {
                         [$r, $g, $b] = $pixels[$y][$x];
                         if ($r > 255) {
                             $r = 255;
