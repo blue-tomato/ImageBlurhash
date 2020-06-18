@@ -48,6 +48,8 @@ E.g.
 
 Returns the decoded Blurhash as base64 PNG datauri for usage in an image. If not existing transparent GIF image will be returned.
 
+Hint: If your image is 500x300 pixels, you can use 50x30 for the Blurhash Data-URI and and scale up the image with CSS. This makes Blurhash decoding faster, the data-uri smaller but the quality is still good.
+
 ### Migration of existing images
 
 For migration of existing fields there are two CLI script in the module directory
