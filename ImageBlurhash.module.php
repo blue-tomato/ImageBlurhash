@@ -159,7 +159,7 @@ class ImageBlurhash extends InputfieldImage implements Module
     {
         $blurhash = null;
 
-        if ((file_exists($file) && exif_imagetype($file)) || strpos($file, "http") === 0) {
+        if (((file_exists($file) && !is_dir($file)) && exif_imagetype($file)) || strpos($file, "http") === 0) {
 
             // optional loading image over HTTP for some special internal cases at Blue Tomato
             // optional loading over curl with http-proxy for some special internal cases at Blue Tomato
