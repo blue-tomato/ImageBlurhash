@@ -90,6 +90,9 @@ class ImageBlurhash extends InputfieldImage implements Module
         $blankFallbackGif = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
         $rawBlurhash = $this->getRawBlurhash($image);
         if ($rawBlurhash && $width > 0 && $height > 0) {
+            
+            $width = floor($width);
+            $height = floor($height);
 
             $ratio =  $width / $height;
             $calcWidth = 200;
