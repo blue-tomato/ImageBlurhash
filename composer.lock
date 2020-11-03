@@ -1,0 +1,119 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "1b29b41bdc819a7c3837b03857c7e821",
+    "packages": [
+        {
+            "name": "hari/pw-module",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/harikt/pwmoduleinstaller.git",
+                "reference": "72baf9e2a6c810f09ce67a9f2c1ce079e57bea43"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/harikt/pwmoduleinstaller/zipball/72baf9e2a6c810f09ce67a9f2c1ce079e57bea43",
+                "reference": "72baf9e2a6c810f09ce67a9f2c1ce079e57bea43",
+                "shasum": ""
+            },
+            "type": "composer-installer",
+            "extra": {
+                "class": "PW\\Composer\\SystemInstaller"
+            },
+            "autoload": {
+                "psr-0": {
+                    "PW\\Composer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-2-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Paul M. Jones",
+                    "email": "pmjones88@gmail.com",
+                    "homepage": "http://paul-m-jones.com"
+                },
+                {
+                    "name": "Hari KT",
+                    "email": "kthari85@gmail.com",
+                    "homepage": "http://harikt.com"
+                },
+                {
+                    "name": "Kyle Robinson Young",
+                    "email": "kyle@dontkry.com",
+                    "homepage": "https://github.com/shama"
+                }
+            ],
+            "description": "Installs processwire 3rd party modules to PW system \"site/modules\" directory.",
+            "keywords": [
+                "installer",
+                "module",
+                "processwire"
+            ],
+            "time": "2016-03-11T04:01:22+00:00"
+        },
+        {
+            "name": "kornrunner/blurhash",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kornrunner/php-blurhash.git",
+                "reference": "5a09325353229c108c8d2ff129ec08b447753f9b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kornrunner/php-blurhash/zipball/5a09325353229c108c8d2ff129ec08b447753f9b",
+                "reference": "5a09325353229c108c8d2ff129ec08b447753f9b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2"
+            },
+            "require-dev": {
+                "ocramius/package-versions": "<1.5",
+                "phpstan/phpstan": "^0.12",
+                "phpunit/phpunit": "^8.2",
+                "vimeo/psalm": "^3.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "kornrunner\\Blurhash\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Boris Momčilović",
+                    "email": "boris.momcilovic@gmail.com"
+                }
+            ],
+            "description": "Pure PHP implementation of Blurhash",
+            "homepage": "https://github.com/kornrunner/php-blurhash",
+            "time": "2020-04-15T22:06:04+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.0",
+        "ext-curl": "*",
+        "ext-gd": "*",
+        "ext-exif": "*"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
+}
