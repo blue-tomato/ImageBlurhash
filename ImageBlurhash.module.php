@@ -90,14 +90,14 @@ class ImageBlurhash extends InputfieldImage implements Module
         $blankFallbackGif = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
         $rawBlurhash = $this->getRawBlurhash($image);
         if ($rawBlurhash && $width > 0 && $height > 0) {
-            
-            $width = floor($width);
-            $height = floor($height);
 
             $ratio =  $width / $height;
             $calcWidth = 200;
             $calcWidth = ($width > $calcWidth) ? $calcWidth : $width;
             $calcHeight = $calcWidth / $ratio;
+            
+            $calcWidth = floor($calcWidth);
+            $calcHeight = floor($calcHeight);
 
             try {
                 $pixels = Blurhash::decode($rawBlurhash, $calcWidth, $calcHeight);
