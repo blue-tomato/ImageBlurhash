@@ -13,7 +13,7 @@ class ImageBlurhash extends InputfieldImage implements Module
             'title' => 'ImageBlurhash',
             'class' => 'ImageBlurhash',
             'author' => 'Blue Tomato',
-            'version' => 206,
+            'version' => 207,
             'summary' => 'Create Blurhash Strings during image upload',
             'singular' => true,
             'autoload' => true,

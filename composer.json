@@ -1,6 +1,9 @@
 {
     "name": "blue-tomato/image-blurhash",
-    "type": "pw-module",
+    "type": "processwire-module",
+    "extra": {
+        "installer-name": "ImageBlurhash"
+    },
     "description": "Module for ProcessWire which automatically generates Blurhashs.",
     "keywords": [ "blurhash", "processwire", "placeholder", "lazyload"],
     "homepage": "https://github.com/blue-tomato/ImageBlurhash",
@@ -18,8 +21,8 @@
     ],
     "require": {
         "php": ">=7.0",
-        "hari/pw-module": "~1.0",
-        "kornrunner/blurhash": "~1.1.0",
+        "composer/installers": "~1.0",
+        "kornrunner/blurhash": "~1.2.1",
         "ext-curl": "*",
         "ext-gd": "*",
         "ext-exif": "*"
