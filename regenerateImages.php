@@ -1,51 +1,73 @@
 <?php
+declare(strict_types=1);
 
 namespace ProcessWire;
 
-set_time_limit(0);
-ini_set('max_execution_time', 0);
+if (!defined('PROCESSWIRECLI')) {
+    fwrite(STDERR, "These script has to be executed via CLI\n");
+    exit(1);
+}
 
-// include processwire api
-include_once(__DIR__ . "/../../../index.php");
+$config  = wire('config');
+$modules = wire('modules');
+$pages   = wire('pages');
+$fields  = wire('fields');
 
-// if not executed over cli
-if(!$config->cli) exit();
+$blurMod = $modules->get('ImageBlurhash');
 
-$ImageBlurhash = $modules->get("ImageBlurhash");
+$totalFields = 0;
+$totalPages  = 0;
+$totalImages = 0;
+$totalHashes = 0;
 
-foreach ($fields->find("type=FieldtypeImage") as $field) {
-    if(isset($field->createBlurhash) && $field->createBlurhash) {
-        foreach ($pages->find("$field.count>0, check_access=0") as $page) {
-            foreach ($page->getUnformatted($field->name) as $image) {
-                
-                $file = null;
-                if(file_exists($image->filename)) {
-                    if(!exif_imagetype($image->filename)) continue;
-                    $file = $image->filename;
-                } else {
-                    // optional loading image over HTTP for some special internal cases at Blue Tomato when image does not exist in the filepath
-                    $file = $image->url;
+foreach ($fields->find('type=FieldtypeImage,createBlurhash=1') as $field) {
+    $totalFields++;
+    $fieldName = $field->name;
+    echo "\n=== Feld: {$fieldName} ===\n";
+
+    foreach ($pages->find("{$fieldName}.count>0,check_access=0") as $page) {
+        $totalPages++;
+        $images = $page->get($fieldName);
+        echo "Seite #{$page->id}: {$images->count()} Bilder\n";
+
+        foreach ($images as $image) {
+            $totalImages++;
+            echo "- '{$image->name}': ";
+
+            $files    = $image->getFiles();
+            $basename = $image->name;
+            $path     = $files[$basename] ?? reset($files);
+
+            // optional loading image over HTTP for some special internal cases
+            // when image does not exist in the filepath
+            if (empty($path) || !is_file($path)) {
+                $url  = $image->url;
+                $data = @file_get_contents($url);
+                if (empty($data)) {
+                    echo "Error (HTTP-Download failed)\n";
+                    continue;
                 }
-
-                echo "Try {$image->name} in {$field->name} \n";
-    
-                $blurhash = $ImageBlurhash->createBlurhash($file);
-    
-                if ($blurhash) {
-                    $success = $ImageBlurhash->insertBlurhash($blurhash, $page, $field, $image);
-                    if($success) {
-                        echo "Blurhash saved for {$image->name} in {$field->name} \n";
-                    } else {
-                        echo "Error: Insert Blurhash failed {$image->name} in {$field->name} \n";
-                    }
-                } else {
-                    echo "Error: Blurhash generation failed {$image->name} in {$field->name} \n";
-                }
-    
+                $tmp = 'data://text/plain;base64,' . base64_encode($data);
+                $path = $tmp;
             }
+
+            $hash = $blurMod->createBlurhash($image);
+            if ($hash === null) {
+                echo "FEHLER (Generierung fehlgeschlagen)\n";
+                continue;
+            }
+
+            $blurMod->insertBlurhash($hash, $page, $field, $image);
+            echo "OK\n";
+            $totalHashes++;
         }
     }
 }
 
-echo "All done";
-exit();
+echo "\nFertig.\n";
+echo "Checked fields : {$totalFields}\n";
+echo "Checked pages: {$totalPages}\n";
+echo "Checked images  : {$totalImages}\n";
+echo "Generated hashes : {$totalHashes}\n";
+
+exit(0);
