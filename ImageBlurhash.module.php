@@ -12,7 +12,7 @@ final class ImageBlurhash extends InputfieldImage implements Module
             'title'       => 'ImageBlurhash',
             'version'     => 208,
             'author'      => 'Blue Tomato',
-            'summary'     => 'Generate Blurhash strings on image upload (optimized for PHP 8.3 & PW 3.0.248)',
+            'summary'     => 'Generate Blurhash strings on image upload',
             'autoload'    => true,
             'requires'    => ['PHP>=8.3', 'ProcessWire>=3.0.248', 'FieldtypeImage'],
         ];
