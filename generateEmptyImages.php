@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace ProcessWire;
 
-if (!defined('PROCESSWIRECLI')) {
-    fwrite(STDERR, "This script must be run via `wire` CLI\n");
-    exit(1);
-}
+include_once(__DIR__ . "/../../../index.php");
+
+// if not executed over cli
+if(!$config->cli) exit();
 
 $config   = wire('config');
 $modules  = wire('modules');
