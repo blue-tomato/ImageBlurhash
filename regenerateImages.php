@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+set_time_limit(0);
+ini_set('max_execution_time', 0);
+
 namespace ProcessWire;
 
 include_once(__DIR__ . "/../../../index.php");
