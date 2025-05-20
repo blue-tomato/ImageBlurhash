@@ -2,32 +2,48 @@
 
 namespace ProcessWire;
 
+use ProcessWire\WireData;
+use ProcessWire\Module;
+use ProcessWire\HookEvent;
+use ProcessWire\Page;
+use ProcessWire\Field;
 use kornrunner\Blurhash\Blurhash;
 
-final class ImageBlurhash extends InputfieldImage implements Module
+/**
+ * ImageBlurhash Module
+ *
+ * Generates and stores Blurhash strings for Pageimage fields.
+ */
+final class ImageBlurhash extends WireData implements Module
 {
+    /**
+     * Module info
+     */
     public static function getModuleInfo(): array
     {
         return [
-            'title'       => 'ImageBlurhash',
-            'version'     => 208,
-            'author'      => 'Blue Tomato',
-            'summary'     => 'Generate Blurhash strings on image upload',
-            'autoload'    => true,
-            'requires'    => ['PHP>=8.3', 'ProcessWire>=3.0.248', 'FieldtypeImage'],
+            'title'    => 'ImageBlurhash',
+            'version'  => 208,
+            'author'   => 'Blue Tomato',
+            'summary'  => 'Generate Blurhash strings on image upload',
+            'autoload' => true,
+            'requires' => ['PHP>=8.3', 'ProcessWire>=3.0.248', 'FieldtypeImage'],
         ];
     }
 
     public function init(): void
     {
+        // Hooks on FieldtypeImage
         $this->addHookAfter('FieldtypeImage::getConfigInputfields', $this, 'hookGetConfigInputFields');
         $this->addHookAfter('FieldtypeImage::savePageField', $this, 'hookSavePageField');
 
+        // Add blurhash property to Pageimage
         $this->addHookProperty(
             'Pageimage::blurhash',
             fn(HookEvent $event): ?string => $this->getRawBlurhash($event->object)
         );
 
+        // Add method to get data-URI of blurhash
         $this->addHookMethod(
             'Pageimage::getBlurhashDataUri',
             fn(HookEvent $event): string => $this->getDecodedBlurhash(
@@ -137,24 +153,43 @@ final class ImageBlurhash extends InputfieldImage implements Module
         $page->save($field->name, ['quiet' => true, 'noHooks' => true]);
     }
 
-    protected function createBlurhash(Pageimage $image, float $compX = 4.0, float $compY = 3.0): ?string
+    /**
+     * Create a blurhash string from a Pageimage or a raw file path/data URL.
+     *
+     * @param Pageimage|string $imageOrPath  Pageimage object OR file path or data:// URL
+     * @param float            $compX        component X (default 4)
+     * @param float            $compY        component Y (default 3)
+     * @return string|null     Blurhash string, or null on failure
+     */
+    protected function createBlurhash($imageOrPath, float $compX = 4.0, float $compY = 3.0): ?string
     {
-        $files = $image->getFiles();
+        // Handle Pageimage or raw path/data URL
+        if ($imageOrPath instanceof Pageimage) {
+            $files    = $imageOrPath->getFiles();
+            $basename = $imageOrPath->name;
+            $path     = $files[$basename] ?? reset($files);
 
-        $basename = $image->name;
-        $path     = $files[$basename] ?? reset($files);
+            if (empty($path) || !is_file($path)) {
+                $this->errors("Cannot load image file for Blurhash: {$basename}", Notice::log);
+                return null;
+            }
 
-        if (empty($path) || !is_file($path)) {
-            $this->errors("Cannot load image file for Blurhash: {$basename}", Notice::log);
+            $data = @file_get_contents($path);
+        } else {
+            
+            $data = @file_get_contents($imageOrPath);
+            if (empty($data)) {
+                $this->errors("Cannot load raw image data for Blurhash", Notice::log);
+                return null;
+            }
+        }
+
+        if (!($img = @imagecreatefromstring($data))) {
+            $this->errors("Invalid image data for Blurhash generation", Notice::log);
             return null;
         }
 
-        $data = @file_get_contents($path);
-        if (empty($data) || !($img = @imagecreatefromstring($data))) {
-            $this->errors("Invalid image data for {$basename}", Notice::log);
-            return null;
-        }
-
+        // resize to max width 200
         $wOrig = imagesx($img);
         $w     = min(200, $wOrig);
         $img   = imagescale($img, $w, -1);
@@ -163,7 +198,7 @@ final class ImageBlurhash extends InputfieldImage implements Module
         $pixels = [];
         for ($y = 0; $y < $h; ++$y) {
             for ($x = 0; $x < $w; ++$x) {
-                $c = imagecolorsforindex($img, imagecolorat($img, $x, $y));
+                $c             = imagecolorsforindex($img, imagecolorat($img, $x, $y));
                 $pixels[$y][] = [$c['red'], $c['green'], $c['blue']];
             }
         }
