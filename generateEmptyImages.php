@@ -1,52 +1,64 @@
 <?php
+declare(strict_types=1);
 
 namespace ProcessWire;
 
-set_time_limit(0);
-ini_set('max_execution_time', 0);
+use ProcessWire\ProcessWire as PW;
 
-// include processwire api
-include_once(__DIR__ . "/../../../index.php");
+if (!defined('PROCESSWIRECLI')) {
+    fwrite(STDERR, "This script must be run via `wire` CLI\n");
+    exit(1);
+}
 
-// if not executed over cli
-if(!$config->cli) exit();
+$config   = wire('config');
+$modules  = wire('modules');
+$pages    = wire('pages');
+$fields   = wire('fields');
 
-$ImageBlurhash = $modules->get("ImageBlurhash");
+$blurMod  = $modules->get('ImageBlurhash');
 
-foreach ($fields->find("type=FieldtypeImage") as $field) {
-    if (isset($field->createBlurhash) && $field->createBlurhash) {
-        foreach ($pages->find("$field.count>0, check_access=0") as $page) {
-            foreach ($page->getUnformatted($field->name) as $image) {
+$totalFields = 0;
+$totalPages  = 0;
+$totalImages = 0;
+$totalHashes = 0;
 
-                if (!$image->blurhash) {
-                    $file = null;
-                    if (file_exists($image->filename)) {
-                        if(!exif_imagetype($image->filename)) continue;
-                        $file = $image->filename;
-                    } else {
-                        // optional loading image over HTTP for some special internal cases at Blue Tomato when image does not exist in the filepath
-                        $file = $image->url;
-                    }
+// 1) Alle Image-Felder mit Blurhash aktiv
+$fieldSelector = 'type=FieldtypeImage,createBlurhash=1';
+foreach ($fields->find($fieldSelector) as $field) {
+    $totalFields++;
+    $fieldName = $field->name;
+    echo "=== Field: {$fieldName} ===\n";
 
-                    echo "Try {$image->name} in {$field->name} \n";
+    $pageSelector = "{$fieldName.count>0},check_access=0";
+    foreach ($pages->find($pageSelector) as $page) {
+        $totalPages++;
+        $images = $page->getUnformatted($fieldName);
+        echo "Page #{$page->id} - found {$images->count()} images\n";
 
-                    $blurhash = $ImageBlurhash->createBlurhash($file);
-
-                    if ($blurhash) {
-                        $success = $ImageBlurhash->insertBlurhash($blurhash, $page, $field, $image);
-                        if ($success) {
-                            echo "Blurhash saved for {$image->name} in {$field->name} \n";
-                        } else {
-                            echo "Error: Something went wrong for {$image->name} in {$field->name} \n";
-                        }
-                    } else {
-                        echo "Error: Blurhash generation failed {$image->name} in {$field->name} \n";
-                    }
-                }
+        foreach ($page->get($fieldName) as $image) {
+            $totalImages++;
+            if ($image->blurhash !== null) {
+                continue;
             }
+
+            echo "- Processing image '{$image->name}' ... ";
+            $hash = $blurMod->createBlurhash($image);
+            if ($hash === null) {
+                echo "FAILED (generate)\n";
+                continue;
+            }
+
+            $blurMod->insertBlurhash($hash, $page, $field, $image);
+            echo "OK\n";
+            $totalHashes++;
         }
     }
 }
 
-echo "All done";
-exit();
+echo "\nFinished.\n";
+echo "Fields checked : {$totalFields}\n";
+echo "Pages scanned  : {$totalPages}\n";
+echo "Images checked : {$totalImages}\n";
+echo "Hashes created : {$totalHashes}\n";
+
+exit(0);
