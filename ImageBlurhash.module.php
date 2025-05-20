@@ -23,7 +23,7 @@ final class ImageBlurhash extends WireData implements Module
     {
         return [
             'title'    => 'ImageBlurhash',
-            'version'  => 208,
+            'version'  => 301,
             'author'   => 'Blue Tomato',
             'summary'  => 'Generate Blurhash strings on image upload',
             'autoload' => true,
