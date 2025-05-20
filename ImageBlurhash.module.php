@@ -37,21 +37,18 @@ final class ImageBlurhash extends WireData implements Module
         $this->addHookAfter('FieldtypeImage::getConfigInputfields', $this, 'hookGetConfigInputFields');
         $this->addHookAfter('FieldtypeImage::savePageField', $this, 'hookSavePageField');
 
-        // Add blurhash property to Pageimage
-        $this->addHookProperty(
-            'Pageimage::blurhash',
-            fn(HookEvent $event): ?string => $this->getRawBlurhash($event->object)
-        );
+        $this->addHookProperty('Pageimage::blurhash', function (HookEvent $event) {
+            $image = $event->object;
+            $event->return = $this->getRawBlurhash($image);
+        });
 
-        // Add method to get data-URI of blurhash
-        $this->addHookMethod(
-            'Pageimage::getBlurhashDataUri',
-            fn(HookEvent $event): string => $this->getDecodedBlurhash(
-                $event->object,
-                (float) ($event->arguments(0) ?? 0.0),
-                (float) ($event->arguments(1) ?? 0.0)
-            )
-        );
+        $this->addHookMethod('Pageimage::getBlurhashDataUri', function (HookEvent $event) {
+            $image = $event->object;
+            $width = $event->arguments(0);
+            $height = $event->arguments(1);
+            $event->return = $this->getDecodedBlurhash($image, $width, $height);
+        });
+
     }
 
     protected function hookGetConfigInputFields(HookEvent $event): void
