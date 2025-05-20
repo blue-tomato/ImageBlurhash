@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace ProcessWire;
 
-use ProcessWire\ProcessWire as PW;
-
 if (!defined('PROCESSWIRECLI')) {
     fwrite(STDERR, "This script must be run via `wire` CLI\n");
     exit(1);
@@ -15,7 +13,7 @@ $modules  = wire('modules');
 $pages    = wire('pages');
 $fields   = wire('fields');
 
-$blurMod  = $modules->get('ImageBlurhash');
+$blurMod = $modules->get('ImageBlurhash');
 
 $totalFields = 0;
 $totalPages  = 0;
@@ -28,7 +26,7 @@ foreach ($fields->find($fieldSelector) as $field) {
     $fieldName = $field->name;
     echo "=== Field: {$fieldName} ===\n";
 
-    $pageSelector = "{$fieldName.count>0},check_access=0";
+    $pageSelector = "{$fieldName}.count>0,check_access=0";
     foreach ($pages->find($pageSelector) as $page) {
         $totalPages++;
         $images = $page->getUnformatted($fieldName);
@@ -41,7 +39,24 @@ foreach ($fields->find($fieldSelector) as $field) {
             }
 
             echo "- Processing image '{$image->name}' ... ";
-            $hash = $blurMod->createBlurhash($image);
+
+            $files    = $image->getFiles();
+            $basename = $image->name;
+            $file     = $files[$basename] ?? reset($files);
+
+            // optional loading image over HTTP for some special internal cases
+            // when image does not exist in the filepath           
+            if (empty($file) || !is_file($file)) {
+                $url  = $image->url;
+                $data = @file_get_contents($url);
+                if (empty($data)) {
+                    echo "FAILED (HTTP download)\n";
+                    continue;
+                }
+                $file = 'data://application/octet-stream;base64,' . base64_encode($data);
+            }
+
+            $hash = $blurMod->createBlurhash($file);
             if ($hash === null) {
                 echo "FAILED (generate)\n";
                 continue;
