@@ -22,7 +22,6 @@ $totalPages  = 0;
 $totalImages = 0;
 $totalHashes = 0;
 
-// 1) Alle Image-Felder mit Blurhash aktiv
 $fieldSelector = 'type=FieldtypeImage,createBlurhash=1';
 foreach ($fields->find($fieldSelector) as $field) {
     $totalFields++;
