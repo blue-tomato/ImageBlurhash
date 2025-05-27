@@ -23,7 +23,7 @@ final class ImageBlurhash extends WireData implements Module
     {
         return [
             'title'    => 'ImageBlurhash',
-            'version'  => 301,
+            'version'  => 320,
             'author'   => 'Blue Tomato',
             'summary'  => 'Generate Blurhash strings on image upload',
             'autoload' => true,
@@ -103,15 +103,32 @@ final class ImageBlurhash extends WireData implements Module
     public function getDecodedBlurhash(Pageimage $image, float $width = 0.0, float $height = 0.0): string
     {
         $blankGif = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+        // nichts zu tun, wenn wir keine Abmessungen haben
         if ($width <= 0 || $height <= 0) {
             return $blankGif;
         }
 
+        // rohen Blurhash auslesen
         $raw = $this->getRawBlurhash($image);
         if ($raw === null) {
             return $blankGif;
         }
 
+        // === CACHING-LOGIK START ===
+        // Namespace und Schlüssel für den Cache festlegen
+        $namespace = __CLASS__ . '::getDecodedBlurhash';
+        // Breite/Höhe als Integer (um flaot-Ungenauigkeit zu vermeiden)
+        $key = md5("{$raw}|".(int)$width."x".(int)$height);
+
+        /** @var WireCache $cache */
+        $cache = $this->wire('cache');
+        // versuche, schon vorhandenen Data-URI zu holen
+        if (null !== ($cached = $cache->get($namespace, $key))) {
+            return $cached;
+        }
+        // === CACHING-LOGIK ENDE ===
+
+        // === bestehende Decode-Logik ===
         $ratio     = $width / $height;
         $maxSample = 200;
         $w         = min((int) $width, $maxSample);
@@ -141,7 +158,12 @@ final class ImageBlurhash extends WireData implements Module
         ob_start();
         imagepng($scaled);
         imagedestroy($scaled);
-        return 'data:image/png;base64,' . base64_encode((string) ob_get_clean());
+        $dataUri = 'data:image/png;base64,' . base64_encode((string) ob_get_clean());
+
+        // === Ergebnis im Cache speichern (24 Stunden = 86400 Sekunden) ===
+        $cache->save($namespace, $key, $dataUri, 86400);
+
+        return $dataUri;
     }
 
     protected function insertBlurhash(string $hash, Page $page, Field $field, Pageimage $image): void
